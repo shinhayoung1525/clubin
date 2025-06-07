@@ -2,8 +2,11 @@
 showErrorDetails = "none"
 
 [theme]
-primaryColor = "#F63366"
-backgroundColor = "white"
+base="light"
+primaryColor="#f63366"
+backgroundColor="white"
+secondaryBackgroundColor="#f3efef"
+
 
 [server]
 maxUploadSize = 5
