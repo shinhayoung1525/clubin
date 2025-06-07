@@ -15,5 +15,4 @@ WELCOME TO University Club Information Platform CLUB:IN
 
 3. EASY TO ADD OWN CLUB
 
-VISIT CLUB:IN 👇👇👇
-https://clubin.streamlit.app/#club-in 
+VISIT CLUB:IN 👉👉👉 https://clubin.streamlit.app/#club-in 
