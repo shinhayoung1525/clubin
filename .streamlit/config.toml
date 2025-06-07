@@ -1,0 +1,9 @@
+[client]
+showErrorDetails = "none"
+
+[theme]
+primaryColor = "#F63366"
+backgroundColor = "white"
+
+[server]
+maxUploadSize = 5
