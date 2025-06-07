@@ -164,7 +164,7 @@ def clean_invalid_supabase_ratings(valid_codes, supabase):
 #===================== 동아리 카드 렌더링 =========================#
 def render_all_club_cards():
     supabase = create_client(st.secrets["supabase"]["url"], st.secrets["supabase"]["key"])
-    club_info_df = get_club_info_df()
+    club_info_df = club_info_df[club_info_df["accept"] == "O"]
     all_avg_scores = get_all_avg_scores()
     valid_codes = club_info_df["club_code"].unique().tolist()
     clean_invalid_supabase_ratings(valid_codes, supabase)
@@ -206,3 +206,32 @@ def save_rating_supabase(club_code, nickname, scores, review):
         "review": review,
     }
     supabase.table("ratings").insert(data).execute()
+
+
+def send_contact_email(message_title,sender_email, sender_tel, message_body):
+    try:
+        # 이메일 내용
+        msg = MIMEText(
+            f"[Club:IN 문의 도착]\n\n보낸 사람 이메일: {sender_email}\n보낸 사람 전화번호:{sender_tel}\n\n제목:{message_title}\n내용:\n{message_body}"
+        )
+        msg["Subject"] = f"📩 Club:IN 문의가 도착했습니다 | {message_title}"
+        msg["From"] = st.secrets["email"]["username"]  # 관리자 계정
+        msg["To"] = st.secrets["email"]["username"]    # 관리자에게 발송
+
+        # SMTP 연결
+        with smtplib.SMTP(st.secrets["email"]["smtp_server"], st.secrets["email"]["smtp_port"]) as server:
+            server.starttls()
+            server.login(
+                st.secrets["email"]["username"],
+                st.secrets["email"]["password"]
+            )
+            server.sendmail(
+                from_addr=st.secrets["email"]["username"],
+                to_addrs=[st.secrets["email"]["username"]],
+                msg=msg.as_string()
+            )
+
+        st.success("문의사항이 성공적으로 전송되었습니다! 🙌", icon="📨")
+
+    except Exception as e:
+        st.error(f"문의사항 전송 실패: {e}", icon="❌")

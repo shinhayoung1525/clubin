@@ -4,6 +4,9 @@ import numpy as np
 import matplotlib.font_manager as fm
 from funtion import *
 import pandas as pd
+import smtplib
+from email.mime.text import MIMEText
+import time
 
 st.set_page_config(
     page_title="동아리 평가 시스템",
@@ -14,8 +17,45 @@ font_path = 'font/NanumGothic.ttf'
 font_prop = fm.FontProperties(fname=font_path)
 plt.rcParams['font.family'] = font_prop.get_name()
 
-left, middle, right = st.columns([3,2,2])
+left, help, middle, right = st.columns([3,1,2,2])
 left.header("Club:IN")
+if help.button( "❓",use_container_width=True):
+    @st.dialog("CLUB:IN 사용법")
+    def help():
+        st.subheader("동아리 평가하기", divider=True)
+        st.write("1. 동아리 코드를 입력한다.")
+        st.write("2. 닉네임을 입력한다. (개인정보에 주의해주세요.)")
+        st.write("3. 마지막에 평가는 꼭 부탁드립니다.")
+        st.write("4. 등록 버튼을 누르면 끝!")
+        st.write("5. 동아리 코드를 정확하게 입력하셨다면 동아리 상세정보에서 리뷰를 확인할 수 있어요!")
+        st.subheader("동아리 추가신청", divider=True)
+        st.write("1. 동아리 이름을 입력한다.")
+        st.write("2. 동아리를 설명하는 테그를 5개 선택한다. [꼭 5개 부탁드립니다.]")
+        st.write("3. 동아리 소개 글을 적는다.")
+        st.write("4. 동아리 코드를 받을 이메일을 적는다.")
+        st.write("5. 동아리 코드를 올린다. [.png 만 가능]")
+        st.write("6. 동아리 코드 이메일을 확인한다. [동아리 코드를 부원에게 알려주세요!]")
+        st.write("*동아리 코드 이메일이 오지 않은 경우 문의하기 버튼을 눌러 문의 부탁드립니다.*")
+        st.write("*궁금한 것이 있다면 편하게 문의해주세요!*")
+        if st.button("문의하기", key="contact_open"):
+            st.session_state["show_contact"] = True
+
+        if st.session_state.get("show_contact", False):
+            st.subheader("📬 문의사항을 작성해주세요")
+            sender_email = st.text_input("📧 답장 받을 이메일 주소", key="contact_email")
+            sender_tel = st.text_input("☎️ 답장 받을 전화번호", key="contact_tel")
+            message_title = st.text_input("제목", key="message_title")
+            message = st.text_area("💬 문의 내용", height=200, key="contact_message")
+
+            if st.button("메일 보내기", key="contact_send"):
+                if not sender_email or not message:
+                    st.error("모든 항목을 입력해주세요.", icon="⚠️")
+                else:
+                    send_contact_email(message_title,sender_email,sender_tel, message)
+                    time.sleep(1)
+                    st.session_state["show_contact"] = False
+                    st.rerun()
+    help()
 if middle.button("동아리 평가하기", icon="✍️", use_container_width=True):
     @st.dialog("동아리 평가하기")
     def rate():
@@ -88,7 +128,7 @@ if right.button("동아리 추가신청", icon="➕", use_container_width=True):
                 "club_name": club_name,
                 "club_code": club_code,
                 "tag": ' '.join(tag),
-                "club_describe": club_describe
+                "club_describe": club_describe,
             }).execute()
 
             send_email(club_email, club_code)
