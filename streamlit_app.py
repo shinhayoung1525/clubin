@@ -73,7 +73,8 @@ if right.button("동아리 추가신청", icon="➕", use_container_width=True):
         club_describe = st.text_input("동아리 소개")
         club_email = st.text_input("동아리 코드 받을 이메일")
         uploaded_logo = st.file_uploader("동아리 로고 (.png)", type=["png"])
-
+        st.write(f"동아리의 수상 경력 및 활동 일정, 모집 글 등 추가하고 싶으신 내용이 있으시다면 이메일(내용 포함) 부탁드립니다!")
+        st.write(f"이메일: yon.culb.in@gmail.com")
         if st.button("신청 제출"):
             if not (club_name and tag and club_describe and club_email and uploaded_logo):
                 st.error("모든 항목을 입력해야 신청할 수 있습니다.")
