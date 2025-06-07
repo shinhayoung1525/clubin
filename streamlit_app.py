@@ -17,8 +17,14 @@ font_path = 'font/NanumGothic.ttf'
 font_prop = fm.FontProperties(fname=font_path)
 plt.rcParams['font.family'] = font_prop.get_name()
 
-left, help, middle, right = st.columns([3,1,2,2])
-left.header("Club:IN")
+left, help, admin, middle, right = st.columns([9, 1, 1, 6, 6])
+with left:
+    logo_col, title_col = st.columns([3, 5]) 
+    with logo_col:
+        st.image("logo/CLUBIN.png")
+
+    title_col.title("Club:IN")
+
 if help.button( "❓",use_container_width=True):
     @st.dialog("CLUB:IN 사용법")
     def help():
@@ -37,7 +43,8 @@ if help.button( "❓",use_container_width=True):
         st.write("6. 동아리 코드 이메일을 확인한다. [동아리 코드를 부원에게 알려주세요!]")
         st.write("*동아리 코드 이메일이 오지 않은 경우 문의하기 버튼을 눌러 문의 부탁드립니다.*")
         st.write("*궁금한 것이 있다면 편하게 문의해주세요!*")
-        if st.button("문의하기", key="contact_open"):
+        hh, mm, aa = st.columns([2,2,2])
+        if hh.button("문의하기", key="contact_open"):
             st.session_state["show_contact"] = True
 
         if st.session_state.get("show_contact", False):
@@ -56,6 +63,70 @@ if help.button( "❓",use_container_width=True):
                     st.session_state["show_contact"] = False
                     st.rerun()
     help()
+
+if "admin_authenticated" not in st.session_state:
+    st.session_state["admin_authenticated"] = False
+
+if admin.button("🔐", use_container_width=True, key="admin_logo_button"):
+    st.session_state["admin_authenticated"] = False
+    if "admin_password_input" in st.session_state:
+        del st.session_state["admin_password_input"]  # ✅ 입력값 삭제
+
+    @st.dialog("🔐 관리자 인증")
+    def show_admin_dialog():
+        password = st.text_input("비밀번호", type="password", key="admin_password_input")
+
+        if password == st.secrets["admin_password"]["password"]:
+            st.session_state["admin_authenticated"] = True
+        elif password:
+            st.error("비밀번호가 올바르지 않습니다.")
+        if st.session_state["admin_authenticated"]:
+            st.success("인증 성공 ✅")
+            st.markdown("### 동아리 승인 관리")
+
+            try:
+                data = supabase.table("club_info").select("club_name, club_code, accept").execute().data
+                df = pd.DataFrame(data)
+
+                if df.empty:
+                    st.info("등록된 동아리가 없습니다.")
+                    return
+
+                original_df = df.copy()
+                df["accept"] = df["accept"].fillna("X")
+
+                edited_df = st.data_editor(
+                    df,
+                    use_container_width=True,
+                    column_config={
+                        "accept": st.column_config.SelectboxColumn("승인 여부", options=["O", "X"])
+                    },
+                    num_rows="dynamic"
+                )
+
+                if st.button("변경사항 적용", type="primary"):
+                    changed_rows = edited_df[edited_df["accept"] != original_df["accept"]]
+
+                    for _, row in changed_rows.iterrows():
+                        club_code = row["club_code"].strip()
+                        new_accept = row["accept"]
+
+                        supabase.table("club_info").update(
+                            {"accept": new_accept}
+                        ).eq("club_code", club_code).execute()
+
+                        # ✅ 변경된 동아리만 toast로 표시
+                        st.toast(f"'{row['club_name']}' 승인 상태 → {new_accept}", icon="✅")
+                        st.cache_data.clear()
+                        st.rerun()
+                    if not changed_rows.empty:
+                        st.success("변경 완료!")
+
+            except Exception as e:
+                st.exception(e)
+
+    show_admin_dialog()
+
 if middle.button("동아리 평가하기", icon="✍️", use_container_width=True):
     @st.dialog("동아리 평가하기")
     def rate():
@@ -129,6 +200,7 @@ if right.button("동아리 추가신청", icon="➕", use_container_width=True):
                 "club_code": club_code,
                 "tag": ' '.join(tag),
                 "club_describe": club_describe,
+                "accept" : "X"
             }).execute()
 
             send_email(club_email, club_code)

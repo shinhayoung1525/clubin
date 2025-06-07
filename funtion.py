@@ -164,6 +164,7 @@ def clean_invalid_supabase_ratings(valid_codes, supabase):
 #===================== 동아리 카드 렌더링 =========================#
 def render_all_club_cards():
     supabase = create_client(st.secrets["supabase"]["url"], st.secrets["supabase"]["key"])
+    club_info_df = get_club_info_df()
     club_info_df = club_info_df[club_info_df["accept"] == "O"]
     all_avg_scores = get_all_avg_scores()
     valid_codes = club_info_df["club_code"].unique().tolist()
