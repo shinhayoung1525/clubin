@@ -19,21 +19,24 @@ left.header("Club:IN")
 if middle.button("동아리 평가하기", icon="✍️", use_container_width=True):
     @st.dialog("동아리 평가하기")
     def rate():
-        club_code = st.text_input("동아리 코드")
-        nickname = st.text_input("닉네임(익명)")
+        club_code = st.text_input("동아리 코드", key="input_code")
+        nickname = st.text_input("닉네임(익명)", key="input_name")
         st.subheader("동아리 별점 1~5점", divider=True)
+
         st.write("친목 활동(협력, 소통)")
-        score1 = st.feedback("stars", key="one")
+        score1 = st.feedback("stars", key="score1")
         st.write("동아리 재무건전성(동아리비 사용)")
-        score2 = st.feedback("stars", key="two")
+        score2 = st.feedback("stars", key="score2")
         st.write("회원 수(적당한 회원 수를 유지하는지)")
-        score3 = st.feedback("stars", key="three")
+        score3 = st.feedback("stars", key="score3")
         st.write("회칙(동아리 규칙)")
-        score4 = st.feedback("stars", key="four")
+        score4 = st.feedback("stars", key="score4")
         st.write("내외부 활동")
-        score5 = st.feedback("stars", key="five")
-        review = st.text_input("평가(리뷰) 자유롭게 적어주세요")
-        if st.button("등록"):
+        score5 = st.feedback("stars", key="score5")
+
+        review = st.text_input("평가(리뷰) 자유롭게 적어주세요", key="input_review")
+
+        if st.button("등록", key="submit_rating"):
             if club_code and nickname and all(s is not None for s in [score1, score2, score3, score4, score5]):
                 save_rating_supabase(
                     club_code,
@@ -41,7 +44,14 @@ if middle.button("동아리 평가하기", icon="✍️", use_container_width=Tr
                     [score1, score2, score3, score4, score5],
                     review
                 )
-                st.success("Supabase에 저장되었습니다!")
+                st.success("리뷰가 저장되었습니다!")
+
+                for key in ["input_code", "input_name", "input_review", "score1", "score2", "score3", "score4", "score5"]:
+                    if key in st.session_state:
+                        del st.session_state[key]
+
+                st.rerun()
+
             else:
                 st.error("모든 항목을 입력해주세요.")
 

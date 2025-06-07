@@ -62,7 +62,7 @@ def upload_logo(club_code, uploaded_file):
     return f"{st.secrets['supabase']['url']}/storage/v1/object/public/logos/{path}"
 
 def send_email(to_email, club_code):
-    msg = MIMEText(f"안녕하세요!\n요청하신 동아리 등록이 완료되었습니다.\n클럽 코드: {club_code}")
+    msg = MIMEText(f"안녕하세요!\n요청하신 동아리 등록이 완료되었습니다.\n클럽 코드: {club_code}.\n\n\n추가로 문의사항이 있으시면 {st.secrets['email']}로 문의 부탁드립니다.")
     msg["Subject"] = "Club:IN 동아리 등록 코드 안내"
     msg["From"] = st.secrets["email"]["username"]
     msg["To"] = to_email
@@ -148,14 +148,14 @@ def render_all_club_cards(info_path="club_info.csv"):
         for chunk in [invalid_ids[i:i+50] for i in range(0, len(invalid_ids), 50)]:
             supabase.table("ratings").delete().in_("id", chunk).execute()
         if invalid_ids:
-            st.warning(f"유효하지 않은 평가 {len(invalid_ids)}건 삭제됨")
+            st.toast(f"유효하지 않은 평가 {len(invalid_ids)}건 삭제됨 (코드가 일치하지 않음)", icon="⚠️")
 
     # ✅ club_info.csv 불러오기
     try:
         response = supabase.table("club_info").select("*").execute()
         club_info_df = pd.DataFrame(response.data)
     except FileNotFoundError:
-        st.error("club_info table 오류가 있습니다.")
+        st.toast("club_info table 오류가 있습니다.", icon="⚠️")
         return
 
     # ✅ 유효한 club_code 기준으로 Supabase 데이터 정리
