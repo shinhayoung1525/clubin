@@ -91,7 +91,6 @@ def club_card(club_name, club_describe, tag, stats,club_code, key):
                 club1col1col1.image(get_logo_url(club_code))
             except:
                 club1col1col1.write("🚫로고 추가 예정🚫")
-            club1col2col2.write(f"{tag}")
             club1col2col2.markdown(
         f":red-badge[{tag[0]}] :orange-badge[{tag[1]}] :green-badge[{tag[2]}] :blue-badge[{tag[3]}] :gray-badge[{tag[4]}]"
         )

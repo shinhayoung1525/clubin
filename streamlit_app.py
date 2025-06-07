@@ -7,7 +7,7 @@ import pandas as pd
 
 st.set_page_config(
     page_title="동아리 평가 시스템",
-    layout="wide",            # 👉 와이드 모드
+#    layout="wide",            # 👉 와이드 모드
     initial_sidebar_state="auto"
 )
 font_path = 'font/NanumGothic.ttf'
