@@ -147,8 +147,6 @@ def render_all_club_cards(info_path="club_info.csv"):
         invalid_ids = [row["id"] for row in data if row["club_code"] not in valid_codes]
         for chunk in [invalid_ids[i:i+50] for i in range(0, len(invalid_ids), 50)]:
             supabase.table("ratings").delete().in_("id", chunk).execute()
-        if invalid_ids:
-            st.toast(f"유효하지 않은 평가 {len(invalid_ids)}건 삭제됨 (코드가 일치하지 않음)", icon="⚠️")
 
     # ✅ club_info.csv 불러오기
     try:
