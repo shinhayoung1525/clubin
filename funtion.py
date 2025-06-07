@@ -163,10 +163,14 @@ def render_all_club_cards(info_path="club_info.csv"):
     # ✅ 검색 및 필터 UI
     search_col, tag_col = st.columns([3, 3])
     keyword = search_col.text_input("동아리 이름 검색 🔎")
+    all_tags_raw = club_info_df["tag"].tolist()
+    all_tags = sorted(set(tag for tags in all_tags_raw for tag in tags.split()))
+
+    # 🔽 UI에서 동적으로 생성된 테그로 검색
     selected_tags = tag_col.multiselect(
         "테그로 동아리 검색 🔎",
-        ["자연과학", "공학", "프로그래밍", "음악", "학술", "운동"]
-    )
+        all_tags
+        )
 
     # ✅ 각 동아리 카드 생성
     for i, row in club_info_df.iterrows():

@@ -41,7 +41,7 @@ if middle.button("동아리 평가하기", icon="✍️", use_container_width=Tr
                 save_rating_supabase(
                     club_code,
                     nickname,
-                    [score1, score2, score3, score4, score5],
+                    [score1+1, score2+1, score3+1, score4+1, score5+1],
                     review
                 )
                 st.success("리뷰가 저장되었습니다!")
