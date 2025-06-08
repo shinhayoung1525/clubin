@@ -86,7 +86,7 @@ def send_email(to_email, club_code,club_name):
         server.send_message(msg)
 
 #===================== Club Card =========================#
-def club_card(club_name, club_describe, tag, stats, club_code, key):
+def club_card(club_name, club_describe, tag, stats, club_code, club_member_count,activity_details, key):
     club1 = st.container(border=True, key=f"club-container-{key}")
     with club1:
         club1col1, club1col2 = st.columns([2, 1])
@@ -123,8 +123,18 @@ def club_card(club_name, club_describe, tag, stats, club_code, key):
             info, rate_all = st.columns(2)
 
             if info.button("동아리 정보", icon="💡", use_container_width=True):
-                st.subheader("📘 동아리 정보")
-                st.markdown(f"{club_describe}")
+                aaaa,bbbb = st.columns([3,2])
+                with aaaa:
+                    st.subheader("📘 동아리 정보", divider=True)
+                with bbbb:
+                    st.subheader(f"동아리 부원수 : {club_member_count}")
+                with st.container(border=True):
+                    st.markdown(f"{club_describe}")
+                st.subheader("📘 동아리 중요 활동 소개")
+                with st.container(border=True):
+                    st.markdown(f"{activity_details}")
+                    
+
 
             if rate_all.button("동아리 리뷰", icon="😃", use_container_width=True):
                 st.subheader("⭐ 동아리 리뷰")
@@ -205,6 +215,8 @@ def render_all_club_cards():
         tags_str = row["tag"]
         club_describe = row["club_describe"]
         tag_list = tags_str.split()
+        club_member_count = row["club_member_count"]
+        activity_details = row["activity_details"]
 
         if keyword.strip() and keyword.strip() not in club_name:
             continue
@@ -212,7 +224,7 @@ def render_all_club_cards():
             continue
 
         averages = all_avg_scores.get(club_code, [0, 0, 0, 0, 0])
-        club_card(club_name, club_describe, tag_list, averages, club_code, key=f"card-{i}")
+        club_card(club_name, club_describe, tag_list, averages, club_code, club_member_count,activity_details, key=f"card-{i}")
 
 #===================== 평가 저장 =========================#
 def save_rating_supabase(club_code, nickname, scores, review):

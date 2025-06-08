@@ -70,9 +70,10 @@ if help.button( "❓",use_container_width=True):
 
 if "admin_authenticated" not in st.session_state:
     st.session_state["admin_authenticated"] = False
-
+    st.session_state.show_edit_form = False
 if admin.button("🔐", use_container_width=True, key="admin_logo_button"):
     st.session_state["admin_authenticated"] = False
+    st.session_state.show_edit_form = False
     if "admin_password_input" in st.session_state:
         del st.session_state["admin_password_input"]  # ✅ 입력값 삭제
 
@@ -86,47 +87,118 @@ if admin.button("🔐", use_container_width=True, key="admin_logo_button"):
             st.error("비밀번호가 올바르지 않습니다.")
         if st.session_state["admin_authenticated"]:
             st.success("인증 성공 ✅")
-            st.markdown("### 동아리 승인 관리")
+            st.markdown("### 동아리 관리 관리자 창")
+            table_c, info_c = st.columns(2) 
+            if table_c.button("동아리 승인 및 삭제",use_container_width=True):
+                try:
+                    st.session_state.show_edit_form = False
+                    # 데이터 로딩
+                    data = supabase.table("club_info").select("club_name, club_code, accept").execute().data
+                    df = pd.DataFrame(data)
 
-            try:
-                data = supabase.table("club_info").select("club_name, club_code, accept").execute().data
-                df = pd.DataFrame(data)
+                    if df.empty:
+                        st.info("등록된 동아리가 없습니다.")
+                        return
 
-                if df.empty:
-                    st.info("등록된 동아리가 없습니다.")
-                    return
+                    original_df = df.copy()
+                    df["accept"] = df["accept"].fillna("X")
 
-                original_df = df.copy()
-                df["accept"] = df["accept"].fillna("X")
+                    # ✅ 편집 UI
+                    edited_df = st.data_editor(
+                        df,
+                        use_container_width=True,
+                        column_config={
+                            "accept": st.column_config.SelectboxColumn("승인 여부", options=["O", "X"])
+                        },
+                        num_rows="dynamic"
+                    )
 
-                edited_df = st.data_editor(
-                    df,
-                    use_container_width=True,
-                    column_config={
-                        "accept": st.column_config.SelectboxColumn("승인 여부", options=["O", "X"])
-                    },
-                    num_rows="dynamic"
-                )
+                    # ✅ 삭제 감지 → 삭제 확정 받기
+                    deleted_df = original_df[~original_df["club_code"].isin(edited_df["club_code"])]
+                    pending_deletion = {}  # {club_code: True} 형태
+
+                    if not deleted_df.empty:
+                        st.subheader("🗑️ 삭제 확인")
+                        for _, row in deleted_df.iterrows():
+                            club_name = row["club_name"]
+                            club_code = row["club_code"]
+
+                            with st.expander(f"'{club_name}' 삭제 확인", expanded=True):
+                                st.warning(f"이 동아리를 삭제하려면 클럽 코드 **{club_code}** 를 입력해야 합니다.")
+
+                                with st.form(key=f"delete-form-{club_code}"):
+                                    code_input = st.text_input("클럽 코드 입력", key=f"code-input-{club_code}")
+                                    confirm = st.form_submit_button("✅ 삭제 확정", type="primary")
+
+                                    if confirm:
+                                        if code_input.strip().upper() == club_code:
+                                            pending_deletion[club_code] = row["club_name"]
+                                            st.success(f"'{club_name}' 삭제 준비 완료 ✅")
+                                        else:
+                                            st.error("❌ 클럽 코드가 정확하지 않습니다.")
+
+                    # ✅ 승인 변경 확인
+                    merged_df = edited_df.merge(
+                        original_df[["club_code", "accept"]],
+                        on="club_code",
+                        how="left",
+                        suffixes=("", "_original")
+                    )
+                    changed_rows = merged_df[merged_df["accept"] != merged_df["accept_original"]]
+
+                    # ✅ 마지막 변경사항 적용 버튼
+                    if st.button("📤 변경사항 최종 적용", type="primary"):
+                        # 승인 업데이트
+                        for _, row in changed_rows.iterrows():
+                            club_code = row["club_code"].strip()
+                            new_accept = row["accept"]
+                            supabase.table("club_info").update({"accept": new_accept}).eq("club_code", club_code).execute()
+                            st.toast(f"'{row['club_name']}' 승인 상태 → {new_accept}", icon="✅")
+
+                        # 삭제 실행
+                        for club_code, club_name in pending_deletion.items():
+                            supabase.table("club_info").delete().eq("club_code", club_code).execute()
+                            st.toast(f"'{club_name}' 삭제됨", icon="🗑️")
+
+                        if not changed_rows.empty or pending_deletion:
+                            st.success("변경 완료! 앱을 새로고침합니다.")
+                            st.cache_data.clear()
+                            st.rerun()
+
+                except Exception as e:
+                    st.exception(e)
+            if "show_edit_form" not in st.session_state:
+                st.session_state.show_edit_form = False
+                st.session_state["admin_authenticated"] = False
+            if info_c.button("동아리 상세정보 수정", use_container_width=True):
+                st.session_state.show_edit_form = True
+
+            if st.session_state.show_edit_form:
+                df = get_club_info_df()
+
+                selected_club = st.selectbox("수정할 동아리를 선택하세요", df["club_name"], key="selected_club")
+
+                club_row = df[df["club_name"] == selected_club].iloc[0]
+
+                new_describe = st.text_area("동아리 소개 (club_describe)", club_row["club_describe"], key="club_describe")
+                new_member_count = st.number_input("맴버 수 (club_member_count)", min_value=0, value=club_row["club_member_count"] or 0, key="club_member_count")
+                new_activity = st.text_area("활동 소개 (activity_details)", club_row["activity_details"] or "", key="activity_details")
 
                 if st.button("변경사항 적용", type="primary"):
-                    changed_rows = edited_df[edited_df["accept"] != original_df["accept"]]
+                    response = supabase.table("club_info").update({
+                        "club_describe": new_describe,
+                        "club_member_count": new_member_count,
+                        "activity_details": new_activity
+                    }).eq("club_code", club_row["club_code"]).execute()
 
-                    for _, row in changed_rows.iterrows():
-                        club_code = row["club_code"].strip()
-                        new_accept = row["accept"]
-
-                        supabase.table("club_info").update(
-                            {"accept": new_accept}
-                        ).eq("club_code", club_code).execute()
-
-                        # ✅ 변경된 동아리만 toast로 표시
-                        st.toast(f"'{row['club_name']}' 승인 상태 → {new_accept}", icon="✅")
-                    if not changed_rows.empty:
-                        st.success("변경 완료!")
+                    # 오류 체크 방식 변경: .data가 비어 있으면 실패
+                    if response and response.data:
+                        st.success(f"✅ '{selected_club}' 동아리 정보가 성공적으로 수정되었습니다.")
                         st.cache_data.clear()
+                        st.session_state.show_edit_form = False
                         st.rerun()
-            except Exception as e:
-                st.exception(e)
+                    else:
+                        st.error("❌ 수정에 실패했습니다. 응답이 비어있습니다.")
 
     show_admin_dialog()
 
@@ -183,7 +255,9 @@ if right.button("동아리 추가신청", icon="➕", use_container_width=True):
         "경제", "정치", "언어", "국문","영어", "일본어"," 중국어", "책", "논문", "공부", "상시모집", "능력 필요", "초보 가능"],
         accept_new_options = True
         )
-        club_describe = st.text_input("동아리 소개")
+        club_member_count = st.slider("동아리 부원수", 0, 100, 25)
+        club_describe = st.text_area("동아리 소개")
+        activity_details = st.text_area("중요한 동아리 활동 소개개")
         club_email = st.text_input("동아리 코드 받을 이메일")
         uploaded_logo = st.file_uploader("동아리 로고 (.png)", type=["png"])
         st.write(f"동아리의 수상 경력 및 활동 일정, 모집 글 등 추가하고 싶으신 내용이 있으시다면 이메일(내용 포함) 부탁드립니다!")
@@ -212,7 +286,9 @@ if right.button("동아리 추가신청", icon="➕", use_container_width=True):
                 "club_code": club_code,
                 "tag": ' '.join(tag),
                 "club_describe": club_describe,
-                "accept" : "X"
+                "accept" : "X",
+                "club_member_count" : club_member_count,
+                "activity_details" : activity_details
             }).execute()
 
             send_email(club_email, club_code, club_name)
