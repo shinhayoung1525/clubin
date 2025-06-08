@@ -7,6 +7,7 @@ import pandas as pd
 import smtplib
 from email.mime.text import MIMEText
 import time
+import re
 
 st.set_page_config(
     page_title="동아리 평가 시스템",
@@ -54,9 +55,12 @@ if help.button( "❓",use_container_width=True):
             message_title = st.text_input("제목", key="message_title")
             message = st.text_area("💬 문의 내용", height=200, key="contact_message")
 
-            if st.button("메일 보내기", key="contact_send"):
+            if st.button("문의 보내기", key="contact_send"):
                 if not sender_email or not message:
                     st.error("모든 항목을 입력해주세요.", icon="⚠️")
+                if not is_valid_email(sender_email):
+                    st.error("이메일 형식이 올바르지 않습니다.")
+                    return
                 else:
                     send_contact_email(message_title,sender_email,sender_tel, message)
                     time.sleep(1)
@@ -117,11 +121,10 @@ if admin.button("🔐", use_container_width=True, key="admin_logo_button"):
 
                         # ✅ 변경된 동아리만 toast로 표시
                         st.toast(f"'{row['club_name']}' 승인 상태 → {new_accept}", icon="✅")
-                        st.cache_data.clear()
-                        st.rerun()
                     if not changed_rows.empty:
                         st.success("변경 완료!")
-
+                        st.cache_data.clear()
+                        st.rerun()
             except Exception as e:
                 st.exception(e)
 
@@ -178,8 +181,7 @@ if right.button("동아리 추가신청", icon="➕", use_container_width=True):
         ["교내활동", "교외활동", "봉사", "자연과학", "공학", "학술", "프로그래밍", "게임", "보건", "생명", "종교", "기독동아리", "친목", "회식 많음", "미디어", "사진", "여행", "그림", "만화",
         "연극", "행사", "대회", "창작", "창업", "발표", "밴드", "음악", "운동", "축구", "베드민턴","테니스", "수영", "배구", "볼링", "헬스", "소모임", "스터디", "주식", "제태크",
         "경제", "정치", "언어", "국문","영어", "일본어"," 중국어", "책", "논문", "공부", "상시모집", "능력 필요", "초보 가능"],
-        accept_new_options = True,
-        max_selections=5
+        accept_new_options = True
         )
         club_describe = st.text_input("동아리 소개")
         club_email = st.text_input("동아리 코드 받을 이메일")
@@ -189,6 +191,16 @@ if right.button("동아리 추가신청", icon="➕", use_container_width=True):
         if st.button("신청 제출"):
             if not (club_name and tag and club_describe and club_email and uploaded_logo):
                 st.error("모든 항목을 입력해야 신청할 수 있습니다.")
+                return
+
+            if len(tag) != 5:
+                st.error("태그는 꼭 5개 골라주세요.")
+                return
+            if not is_valid_email(club_email):
+                st.error("이메일 형식이 올바르지 않습니다.")
+                return
+            if is_duplicate_club_name(club_name):
+                st.error("같은 이름의 동아리가 이미 등록되어 있습니다.")
                 return
 
             club_code = generate_unique_code()
@@ -203,8 +215,8 @@ if right.button("동아리 추가신청", icon="➕", use_container_width=True):
                 "accept" : "X"
             }).execute()
 
-            send_email(club_email, club_code)
-            st.success(f"동아리 신청이 완료되었습니다! 클럽 코드는 {club_code}이며 이메일로도 전송되었습니다.")
+            send_email(club_email, club_code, club_name)
+            st.success(f"{club_name} 동아리 신청이 완료되었습니다! 클럽 코드는 {club_code}이며 이메일로도 전송되었습니다.")
 
     extra()
 
