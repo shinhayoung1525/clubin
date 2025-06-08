@@ -11,6 +11,7 @@ import re
 
 st.set_page_config(
     page_title="동아리 평가 시스템",
+    page_icon="logo/CLUBIN.png",
 #    layout="wide",            # 👉 와이드 모드
     initial_sidebar_state="auto"
 )
