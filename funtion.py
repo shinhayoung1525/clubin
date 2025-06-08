@@ -120,23 +120,25 @@ def club_card(club_name, club_describe, tag, stats, club_code, club_member_count
     if club1col2.button("동아리 상세정보", icon="📝", use_container_width=True, key=f"detail-{key}"):
         @st.dialog("동아리 상세정보")
         def extra():
-            info, rate_all = st.columns(2)
+            tab1, tab2 = st.tabs(["💡 동아리 정보", "⭐동아리 리뷰"])
 
-            if info.button("동아리 정보", icon="💡", use_container_width=True):
-                aaaa,bbbb = st.columns([3,2])
+            with tab1:
+                aaaa, bbbb = st.columns([3, 2])
                 with aaaa:
                     st.subheader("📘 동아리 정보", divider=True)
                 with bbbb:
                     st.subheader(f"동아리 부원수 : {club_member_count}")
+
                 with st.container(border=True):
                     st.markdown(f"{club_describe}")
+
                 st.subheader("📘 동아리 중요 활동 소개")
                 with st.container(border=True):
                     st.markdown(f"{activity_details}")
-                    
+                            
 
 
-            if rate_all.button("동아리 리뷰", icon="😃", use_container_width=True):
+            with tab2:
                 st.subheader("⭐ 동아리 리뷰")
 
                 # Supabase에서 리뷰 불러오기
