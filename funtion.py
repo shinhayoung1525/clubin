@@ -104,7 +104,7 @@ def club_card(club_name, club_describe, tag, stats, club_code, club_member_count
         with club1col1.container(border=True):
             st.markdown(f"{club_describe}")
         with club1col2:
-            labels = ['친목', '재무건전성', '회원 수', '회칙', '내외부 활동']
+            labels = ['투명성', '지속적 활동', '참여도', '친목', '활동의 질']
             angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
             stats += stats[:1]
             angles += angles[:1]
